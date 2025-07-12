@@ -1,0 +1,33 @@
+# simple.ANN 
+G RotationNetwork 
+# Six Neurons: zero bias, without activation function 
+N 0.0 0  
+N 0.0 0  
+N 0.0 0  
+N 0.0 0  
+N 0.0 0  
+N 0.0 0  
+# Layer 0: Neuron 0 to 2 
+L 0 2  
+# Layer 1: Neuron 3 to 5 
+L 3 5  
+# Neuron 0 to 2: has one Dendrite 
+S -1 0 1.0  
+S -1 1 1.0  
+S -1 2 1.0  
+# Neuron 3 to 5: has one Axon 
+S 3 -1 1.0  
+S 4 -1 1.0  
+S 5 -1 1.0  
+# Dendrites from Neuron 0 to Neuron 3~5 
+S 0 3 0.3536  
+S 0 4 -0.5732  
+S 0 5 0.7392  
+# Dendrites from Neuron 1 to Neuron 3~5 
+S 1 3 0.6123  
+S 1 4 0.7392  
+S 1 5 0.2803  
+# Dendrites from Neuron 2 to Neuron 3~5 
+S 2 3 -0.7071  
+S 2 4 0.3536  
+S 2 5 0.6124  

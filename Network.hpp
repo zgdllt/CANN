@@ -13,6 +13,7 @@ public:
     std::vector<std::vector<double>> forward(const std::vector<double>& inputs);
     bool isValid() const;
     void printLayers() const;
+    void setWeights(int layerIndex = 0, const std::vector<std::vector<double>>& weights = {});
     void deleteLayer(int index);
     void addLayer(int index);
     void showlayer(int index) const;

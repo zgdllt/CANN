@@ -2,20 +2,23 @@
 #include "Soma.hpp"
 #include "Synapse.hpp"
 #include <vector>
-Neuron::Neuron(std::vector<Dendrite*> pre, double bias, int activationFunctionType, int layerIndex, int index)
-    : Soma(pre, bias, activationFunctionType), Axon(Soma::getOutput(),{},this), layerIndex(layerIndex), index(index) {
-        for (auto& dendrite : pre) {
-            Dendrites.push_back(dendrite);
-        }
+Neuron::Neuron(std::vector<Synapse*> pre, double bias, int activationFunctionType, int layerIndex, int index)
+    : Soma({},bias, activationFunctionType), layerIndex(layerIndex), index(index)
+{
+    for (auto& synapse : pre) {
+        synapse->setNxt(this);
+        Dendrites.push_back(synapse);
+        Soma::addInput(synapse->getSignal());
+    }
 }
 bool Neuron::isConnectedTo(const Neuron& other) const {
     for (const auto& dendrite : Dendrites) {
-        if (other.Axon.isConnectedTo(dendrite)) {
+        if (dendrite->getPre() == &other) {
             return true;
         }
     }
     for (const auto& dendrite : other.Dendrites) {
-        if (Axon.isConnectedTo(dendrite)) {
+        if (dendrite->getPre() == this) {
             return true;
         }
     }
@@ -23,10 +26,9 @@ bool Neuron::isConnectedTo(const Neuron& other) const {
 }
 void Neuron::connectTo(Neuron* other, double weight) {
     if (other != nullptr && other->layerIndex - 1 == layerIndex && !isConnectedTo(*other)) {
-        Dendrite* synapse = new Dendrite(&Axon, weight, other);
-        other->Soma::addInput(synapse->getSignal());
+        Synapse* synapse = new Synapse(Soma::getOutput(), weight, this, other);
         other->Dendrites.push_back(synapse);
-        Axon.connect(synapse);
+        Axon.push_back(synapse);
     }
     else {
         std::cerr << "Cannot connect: invalid neuron or already connected. "
@@ -35,58 +37,22 @@ void Neuron::connectTo(Neuron* other, double weight) {
         throw std::runtime_error("Cannot connect: invalid neuron or already connected.");
     }
 }
-void Neuron::connectFrom(Neuron* other, double weight) {
-    // Check if 'other' is not nullptr, and layer indices are correct, and not already connected
-    bool alreadyConnected = false;
-    if (other != nullptr && layerIndex - 1 == other->layerIndex) {
-        // Check if any of 'other' neuron's Axon connections are to this neuron
-        for (const auto& dendrite : Dendrites) {
-            if (other->Axon.isConnectedTo(dendrite)) {
-                alreadyConnected = true;
-                break;
-            }
-        }
-        if (!alreadyConnected) {
-            Dendrite* synapse = new Dendrite(&(other->Axon), weight, this);
-            Soma::addInput(synapse->getSignal());
-            Axon.setInput(Soma::getOutput());
-            Dendrites.push_back(synapse);
-            other->Axon.connect(synapse); // Connect the synapse to the axon of the other neuron
-        } else {
-            std::cerr << "Cannot connect: already connected to this neuron. "
-                      << "From Neuron(layer=" << layerIndex << ", index=" << index << ") "
-                      << "To Neuron(layer=" << other->layerIndex << ", index=" << other->index << ")\n";
-            throw std::runtime_error("Cannot connect: already connected to this neuron.");
-        }
-    } else {
-        std::cerr << "Cannot connect: invalid neuron or already connected. "
-                  << "From Neuron(layer=" << layerIndex << ", index=" << index << ") "
-                  << "To Neuron(layer=" << (other ? other->layerIndex : -1) << ", index=" << (other ? other->index : -1) << ")\n";
-        throw std::runtime_error("Cannot connect: invalid neuron or already connected.");
-    }
-}
-void Neuron::disconnectFrom(Neuron* other) {
-    if (other != nullptr) {
-        for (auto it = Dendrites.begin(); it != Dendrites.end(); ++it) {
-            if ((*it)->getNeuron() == other) {
-                other->Axon.disconnect(*it);
-                delete *it; // Free memory
-                Dendrites.erase(it);
-                return;
-            }
-        }
-    }
-}
 void Neuron::disconnectTo(Neuron* other) {
-    if (other != nullptr) {
+    if (other != nullptr&&isConnectedTo(*other)) {
         for (auto it = other->Dendrites.begin(); it != other->Dendrites.end(); ++it) {
-            if ((*it)->getNeuron() == this) {
-                Axon.disconnect(*it);
+            if ((*it)->getPre() == this) {
+                Axon.erase(std::remove(Axon.begin(), Axon.end(), *it), Axon.end());
                 delete *it; // Free memory
                 other->Dendrites.erase(it);
                 return;
             }
         }
+    } else {
+        std::cerr << "Cannot disconnect: invalid neuron or not connected. "
+                  << "From Neuron(layer=" << layerIndex << ", index=" << index << ") "
+                  << "To Neuron(layer=" << (other ? other->layerIndex : -1) << ", index=" << (other ? other->index : -1) << ")\n";
+        throw std::runtime_error("Cannot disconnect: invalid neuron or not connected.");
+        
     }
 }
 std::vector<double> Neuron::getWeights() const {
@@ -112,7 +78,10 @@ void Neuron::showConnections() const {
         std::cout << "  Dendrite connected to Synapse with input: " << synapse->getInput() 
                   << ", weight: " << synapse->getWeight() << "\n";
     }
-    std::cout << "  Axon output: " << Axon.getSignal() << "\n";
+    std::cout << "  Axon connections: " << Axon.size() << "\n";
+    for (const auto& synapse : Axon) {
+        std::cout << "    Axon synapse signal: " << synapse->getSignal() << "\n";
+    }
 }
 int Neuron::getLayerIndex() const {
     return layerIndex;
@@ -129,9 +98,9 @@ void Neuron::setBias(double newBias) {
 void Neuron::remove()
 {
     // Remove all outgoing connections (Axon)
-    for (auto* synapse : Axon.getNext()) {
+    for (auto* synapse : Axon) {
         if (synapse) {
-            Neuron* postNeuron = synapse->getNeuron();
+            Neuron* postNeuron = synapse->getNxt();
             if (postNeuron) {
                 auto& dendrites = postNeuron->Dendrites;
                 dendrites.erase(
@@ -142,13 +111,16 @@ void Neuron::remove()
             delete synapse;
         }
     }
-    Axon.disconnectAll();
+    Axon.clear();
     // Remove all incoming connections (Dendrites)
     for (auto* synapse : Dendrites) {
         if (synapse) {
-            Neuron* preNeuron = synapse->getNeuron();
+            Neuron* preNeuron = synapse->getPre();
             if (preNeuron) {
-                preNeuron->Axon.disconnect(synapse);
+                preNeuron->Axon.erase(
+                    std::remove(preNeuron->Axon.begin(), preNeuron->Axon.end(), synapse),
+                    preNeuron->Axon.end()
+                );
             }
             delete synapse;
         }
@@ -158,11 +130,12 @@ void Neuron::remove()
 void Neuron::updateInput() {
     std::vector<double> inputs;
     for (const auto& dendrite : Dendrites) {
-        dendrite->setInput(dendrite->getPrevious()->getSignal());
+        dendrite->setInput(dendrite->getPre() != nullptr ? dendrite->getPre()->getOutput() : 0.0);
     }
     for (const auto& dendrite : Dendrites) {
         inputs.push_back(dendrite->getSignal());
     }
+    
     Soma::setInputs(inputs); // Set the inputs to Soma
 }
 //!!to do!!
@@ -172,5 +145,8 @@ void Neuron::updateOutput()
         updateInput(); // Update inputs from Dendrites
     }
     Soma::updateOutput(); // Update the Soma output
-    Axon.setInput(Soma::getOutput()); // Update the Axon input based on Soma output
+    // Update Axon signals based on the Soma output
+    for (auto& synapse : Axon) {
+        synapse->setInput(Soma::getOutput());
+    }
 }

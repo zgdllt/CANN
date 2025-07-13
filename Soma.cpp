@@ -9,13 +9,6 @@ Soma::Soma(std::vector<double> inputs, double bias, int activationFunctionType)
 {
     updateOutput();
 }
-Soma::Soma(std::vector<Dendrite*> inputs, double bias, int activationFunctionType)
-    : bias(bias), activationFunctionType(activationFunctionType), output(0.0) {
-    for (const auto& dendrite : inputs) {
-        this->inputs.push_back(dendrite->getSignal());
-    }
-    updateOutput();
-}
 void Soma::addInput(double input) {
     inputs.push_back(input);
     updateOutput();
@@ -25,7 +18,7 @@ std::vector<double> Soma::getInputs() const {
 }
 void Soma::setInputs(const std::vector<double>& inputs) {
     this->inputs = inputs;
-    updateOutput();
+    // updateOutput();
 }
 void Soma::setBias(double bias) {
     this->bias = bias;

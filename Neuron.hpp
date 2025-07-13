@@ -8,11 +8,9 @@
 class Neuron:public Soma{
 public:
     Neuron(const Neuron& other) = default; // Copy constructor
-    Neuron(std::vector<Dendrite*> pre = {}, double bias = 0.0, int activationFunctionType = 0,int layerIndex = 0, int idx = 0);
+    Neuron(std::vector<Synapse*> pre = {}, double bias = 0.0, int activationFunctionType = 0,int layerIndex = 0, int idx = 0);
     bool isConnectedTo(const Neuron& other) const;
     void connectTo(Neuron* other, double weight = 1.0);
-    void connectFrom(Neuron* other, double weight = 1.0);
-    void disconnectFrom(Neuron* other);
     void disconnectTo(Neuron* other);
     std::vector<double> getWeights() const;
     void setWeights(const std::vector<double>& weights);
@@ -27,8 +25,8 @@ public:
     void updateOutput() override;
     virtual ~Neuron() = default;
 private:
-    std::vector<Dendrite*> Dendrites;
-    Axon Axon;
+    std::vector<Synapse*> Dendrites;
+    std::vector<Synapse*> Axon; // Axon is a Synapse that sends signals to other neurons
     int layerIndex; // Index of the layer this neuron belongs to
     int index; // Index of the neuron in its layer
 };

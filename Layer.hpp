@@ -21,6 +21,7 @@ public:
     void setWeights(const std::vector<std::vector<double>>& weights);
     void setInput(const std::vector<double>& input);
     void updateOutputs();
+    std::vector<double> getOutputs() const;
 private:
     int index; // Index of the layer in the network
     Layer* previousLayer;

@@ -1,4 +1,6 @@
 #include "Layer.hpp"
+#include "Synapse.hpp"
+#include <vector>
 Layer::Layer(int index,int neuronCount, std::vector<double> biases, int activationFunctionType)
 {
     this->index = index;
@@ -8,7 +10,7 @@ Layer::Layer(int index,int neuronCount, std::vector<double> biases, int activati
         biases.resize(neuronCount, 0.0); // Ensure biases has enough elements
     }
     for (size_t i = 0; i < neuronCount; ++i) {
-        neurons.emplace_back(std::vector<Dendrite*>(), biases[i], activationFunctionType, index, i);
+        neurons.emplace_back(std::vector<Synapse*>(), biases[i], activationFunctionType, index, i);
     }
 }
 
@@ -24,9 +26,9 @@ void Layer::setWeights(const std::vector<std::vector<double>>& weights) {
         std::cerr << "Error: Weights size does not match the number of neurons in the layer.\n";
         throw std::invalid_argument("Weights size does not match the number of neurons in the layer");
     }
-    if (previousLayer) {
-        std::cerr << "Error: Cannot set weights for a layer that is not the first layer in the network.\n";
-        throw std::runtime_error("Cannot set weights: Layer is not the first layer in the network");
+    if (previousLayer == nullptr) {
+        std::cerr << "Error: Cannot set weights for the first layer in the network.\n";
+        throw std::runtime_error("Cannot set weights: Layer is the first layer in the network");
     }
     for (size_t i = 0; i < neurons.size(); ++i) {
         neurons[i].setWeights(weights[i]);
@@ -41,6 +43,9 @@ int Layer::getIndex() const {
 }
 void Layer::setIndex(int newIndex) {
     index = newIndex;
+    for (auto& neuron : neurons) {
+        neuron.setLayerIndex(newIndex);
+    }
 }
 void Layer::setBias(int neuronIndex, double newBias) {
     if (neuronIndex < 0 || neuronIndex >= neurons.size()) {
@@ -79,10 +84,12 @@ Layer* Layer::getPreviousLayer() const {
 Layer* Layer::getNextLayer() const {
     return nextLayer;
 }
-void Layer::connectTo(Layer* nextLayer) {
+void Layer::connectTo(Layer* nextLayer)
+{
+    // Disconnect existing connections to the next layer
     for (auto& neuron : neurons) {
         for (const auto& nextNeuron : nextLayer->getNeurons()) {
-            if (!neuron.isConnectedTo(nextNeuron)) {
+            if (neuron.isConnectedTo(nextNeuron)) {
                 neuron.disconnectTo(const_cast<Neuron*>(&nextNeuron));
             }
         }

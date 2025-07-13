@@ -9,7 +9,6 @@ class Soma : public ActivationFunc {
 public:
     Soma();
     Soma(std::vector<double> inputs = {}, double bias = 0.0, int activationFunctionType = 0);
-    Soma(std::vector<Dendrite*> inputs = {}, double bias = 0.0, int activationFunctionType = 0);
     void addInput(double input);
     std::vector<double> getInputs() const;
     void setInputs(const std::vector<double>& inputs);

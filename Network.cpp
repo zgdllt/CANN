@@ -31,6 +31,19 @@ Network::Network() { layerCount = 0; }
 //     }
 //     layerCount++;
 // }
+void Network::setWeights(int layerIndex, const std::vector<std::vector<double>>& weights) {
+    if (layerIndex < 0 || layerIndex >= layerCount) {
+        std::cerr << "Error: Layer index out of range.\n";
+        throw std::out_of_range("Layer index out of range");
+    }
+    if (layerIndex == 0) {
+        std::cerr << "Error: Cannot set weights for the first layer in the network.\n";
+        throw std::runtime_error("Cannot set weights: Layer is the first layer in the network.");
+    }
+    auto it = layers.begin();
+    std::advance(it, layerIndex);
+    (*it)->setWeights(weights);
+}
 void Network::addLayer(Layer* layer) {
     if (layer->getIndex() < 0 || layer->getIndex() > layerCount) {
         std::cerr << "Error: Layer index out of range.\n";

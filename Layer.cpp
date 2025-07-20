@@ -1,5 +1,6 @@
 #include "Layer.hpp"
 #include "Synapse.hpp"
+#include <iostream>
 #include <vector>
 Layer::Layer(int index,int neuronCount, std::vector<double> biases, int activationFunctionType)
 {
@@ -19,6 +20,9 @@ void Layer::addNeuron(const Neuron& neuron) {
 }
 
 const std::vector<Neuron>& Layer::getNeurons() const {
+    return neurons;
+}
+std::vector<Neuron>& Layer::Neurons() {
     return neurons;
 }
 void Layer::setWeights(const std::vector<std::vector<double>>& weights) {
@@ -84,23 +88,31 @@ Layer* Layer::getPreviousLayer() const {
 Layer* Layer::getNextLayer() const {
     return nextLayer;
 }
-void Layer::connectTo(Layer* nextLayer)
+void Layer::disconnect()
 {
-    // Disconnect existing connections to the next layer
-    for (auto& neuron : neurons) {
-        for (const auto& nextNeuron : nextLayer->getNeurons()) {
-            if (neuron.isConnectedTo(nextNeuron)) {
+    if (this->nextLayer != nullptr) {
+        // 先断开神经元级别的连接
+        for (auto& neuron : neurons) {
+            for (auto& nextNeuron : this->nextLayer->getNeurons()) {
                 neuron.disconnectTo(const_cast<Neuron*>(&nextNeuron));
             }
         }
+        // 然后断开层级别的连接
+        this->nextLayer->previousLayer = nullptr;
+        this->nextLayer = nullptr;
     }
-    this->nextLayer = nextLayer;
-    if (nextLayer) {
-        nextLayer->previousLayer = this;
-    }
-    for (auto& neuron : neurons) {
-        for (const auto& nextNeuron : nextLayer->getNeurons()) {
-            neuron.connectTo(const_cast<Neuron*>(&nextNeuron));
+}
+void Layer::connectTo(Layer* newNextLayer)
+{
+    // Disconnect existing connections to the next layer
+    this->disconnect();
+    this->nextLayer = newNextLayer;
+    if (newNextLayer != nullptr) {
+        newNextLayer->previousLayer = this;
+        for (auto& neuron : neurons) {
+            for (auto& nextNeuron : newNextLayer->getNeurons()) {
+                neuron.connectTo(const_cast<Neuron*>(&nextNeuron));
+            }
         }
     }
 }

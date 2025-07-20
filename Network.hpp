@@ -6,6 +6,7 @@
 #include <iostream>
 #include<fstream>
 
+
 class Network {
 public:
     Network();
@@ -21,10 +22,12 @@ public:
     void exportToFile(const std::string& filename) const;
     void import(const std::string& filename);
     ~Network();
-
+    // Getter methods for ANN export/import
+    const std::list<Layer*>& getLayers() const;
+    int getLayerCount() const;
 private:
     int layerCount = 0; // 记录网络层数
-    std::list<Layer*> layers; 
+    std::list<Layer*> layers;
 };
 
 #endif // NETWORK_HPP

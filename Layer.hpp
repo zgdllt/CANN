@@ -10,6 +10,7 @@ public:
     void addNeuron(const Neuron& neuron);
     void printNeurons() const;
     const std::vector<Neuron>& getNeurons() const;
+    std::vector<Neuron>& Neurons();
     int getNeuronCount() const;
     void setIndex(int newIndex);
     void setBias(int neuronIndex, double newBias);
@@ -17,6 +18,7 @@ public:
     bool isConnectedTo(const Layer& other) const;
     Layer* getPreviousLayer() const;
     Layer* getNextLayer() const;
+    void disconnect();
     void connectTo(Layer* nextLayer);
     void setWeights(const std::vector<std::vector<double>>& weights);
     void setInput(const std::vector<double>& input);

@@ -1,8 +1,26 @@
+//-------------------------------------------------------------------------------------------------------------------
+//【文件名】Network.cpp
+//【功能模块和目的】神经网络类的实现，包含神经网络的所有功能实现
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
+
 #include "Network.hpp"
+#include "Layer.hpp"
 #include "Soma.hpp"
 #include <cstddef>
 
-Network::Network() { layerCount = 0; }
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::Network
+//【函数功能】Network类的默认构造函数，初始化网络层数为0
+//【参数】无
+//【返回值】无
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
+Network::Network() { 
+    layerCount = 0; 
+}
 // void Network::addLayer(Layer* layer) {
 //     if (layer->getIndex() < 0 || layer->getIndex() > layerCount) {
 //         std::cerr << "Error: Layer index out of range.\n";
@@ -31,6 +49,15 @@ Network::Network() { layerCount = 0; }
 //     }
 //     layerCount++;
 // }
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::setWeights
+//【函数功能】设置指定层的权重值。
+//【参数】layerIndex - 要设置权重的层的索引。
+//【参数】weights - 包含权重值的二维向量。
+//【返回值】void - 无返回值。
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
 void Network::setWeights(int layerIndex, const std::vector<std::vector<double>>& weights) {
     if (layerIndex < 0 || layerIndex >= layerCount) {
         std::cerr << "Error: Layer index out of range.\n";
@@ -44,6 +71,14 @@ void Network::setWeights(int layerIndex, const std::vector<std::vector<double>>&
     std::advance(it, layerIndex);
     (*it)->setWeights(weights);
 }
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::addLayer
+//【函数功能】向神经网络中添加一个新的层
+//【参数】layer - 指向要添加的层的指针
+//【返回值】void - 无返回值
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
 void Network::addLayer(Layer* layer) {
     if (layer->getIndex() < 0 || layer->getIndex() > layerCount) {
         std::cerr << "Error: Layer index out of range.\n";
@@ -72,12 +107,66 @@ void Network::addLayer(Layer* layer) {
     }
     layerCount++;
 }
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::addNeuron
+//【函数功能】向指定层添加一个新的神经元
+//【参数】layerIndex - 层索引，bias - 偏置值，activationType - 激活函数类型
+//【返回值】无
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
+void Network::addNeuron(int layerIndex,double bias, int activationType) {
+    if (layerIndex < 0 || layerIndex >= layerCount) {
+        std::cerr << "Error: Layer index out of range.\n";
+        throw std::out_of_range("Layer index out of range");
+    }
+    
+    // 获取指定层
+    auto it = layers.begin();
+    std::advance(it, layerIndex);
+    Layer* layer = *it;
+    
+    // 创建新神经元
+    int neuronIndex = layer->getNeuronCount();
+    Neuron newNeuron({}, bias, activationType, layerIndex, neuronIndex);
+    layer->addNeuron(newNeuron);
+}
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::deleteNeuron
+//【函数功能】删除指定层的指定神经元
+//【参数】layerIndex - 层索引，neuronIndex - 神经元索引
+//【返回值】无
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
+void Network::deleteNeuron(int layerIndex, int neuronIndex) {
+    if (layerIndex < 0 || layerIndex >= layerCount) {
+        std::cerr << "Error: Layer index out of range.\n";
+        throw std::out_of_range("Layer index out of range");
+    }
+    
+    // 获取指定层
+    auto it = layers.begin();
+    std::advance(it, layerIndex);
+    Layer* layer = *it;
+    
+    // 删除指定神经元
+    layer->deleteNeuron(neuronIndex);
+}
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::forward
+//【函数功能】执行神经网络的前向传播，计算每一层的输出
+//【参数】inputs - 输入数据向量
+//【返回值】std::vector<std::vector<double>> - 每一层的输出结果
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
 std::vector<std::vector<double>> Network::forward(const std::vector<double>& inputs) {
     if (layers.empty()) {
         return {};
     }
-    std::vector<std::vector<double>> outputs;
-    std::vector<double> currentInputs = inputs;
+    std::vector<std::vector<double>> outputs;     // 存储每一层的输出
+    std::vector<double> currentInputs = inputs;   // 当前输入，初始为网络输入
     layers.front()->setInput(currentInputs);
     for (auto& layer : layers) {
         layer->updateOutputs();
@@ -86,11 +175,19 @@ std::vector<std::vector<double>> Network::forward(const std::vector<double>& inp
             layerOutputs.push_back(neuron.getOutput());
         }
         outputs.push_back(layerOutputs);
-        currentInputs = layerOutputs;
+        currentInputs = layerOutputs;             // 下一层的输入是当前层的输出
     }
 
     return outputs;
 }
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::deleteLayer
+//【函数功能】从神经网络中删除指定的层
+//【参数】layerIndex - 要删除的层的索引
+//【返回值】void - 无返回值
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
 void Network::deleteLayer(int index) {
     if (index < 0 || index >= layerCount) {
         std::cerr << "Error: Layer index out of range.\n";
@@ -131,6 +228,14 @@ void Network::deleteLayer(int index) {
     layers.erase(it);
     layerCount--;
 }
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::addLayer
+//【函数功能】在神经网络中添加一个新的层
+//【参数】index - 新层的索引
+//【返回值】void - 无返回值
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
 void Network::addLayer(int index) {
     if (index < 0 || index > layerCount) {
         std::cerr << "Error: Layer index out of range.\n";
@@ -170,14 +275,37 @@ void Network::addLayer(int index) {
     
     layerCount++;
 }
-void Network::showInfo() const {
-    std::cout << "Network has " << layerCount << " layers:\n";
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::showInfo
+//【函数功能】显示网络的基本信息，包括层数、总神经元数和总突触数
+//【参数】无
+//【返回值】无
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
+void Network::showInfo() const{
+    int totalNeurons = 0;      // 总神经元数量
+    int totalSynapses = 0;     // 总突触数量
     for (const auto& layer : layers) {
-        std::cout << "Layer Index: " << layer->getIndex() << ", Neuron Count: " << layer->getNeuronCount() << "\n";
-        layer->printNeurons();
+        totalNeurons += layer->getNeuronCount();
+        for (const auto& neuron : layer->getNeurons()) {
+            totalSynapses += neuron.getDendriteCount();
+        }
     }
+
+    std::cout << "Network has " << layerCount << " layers:\n";
+    std::cout << "Total Neurons: " << totalNeurons << std::endl;
+    std::cout << "Total Synapses: " << totalSynapses << std::endl;
 }
-void Network::showlayer(int index) const {
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::showLayer
+//【函数功能】显示指定层的详细信息，包括索引、神经元数量
+//【参数】index - 要显示的层的索引
+//【返回值】无
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
+void Network::showLayer(int index) const {
     if (index < 0 || index >= layerCount) {
         std::cerr << "Error: Layer index out of range.\n";
         throw std::out_of_range("Layer index out of range");
@@ -207,6 +335,29 @@ void Network::showlayer(int index) const {
     (*it)->printNeurons();
     std::cout << "==============================" << std::endl;
 }
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::showLayers
+//【函数功能】显示网络中所有层的详细信息，包括索引和神经
+//【参数】无
+//【返回值】无
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
+void Network::showLayers() const {
+    std::cout << "Network Layers:\n";
+    for (const auto& layer : layers) {
+        std::cout << "Layer Index: " << layer->getIndex() << ", Neuron Count: " << layer->getNeuronCount() << "\n";
+        layer->printNeurons();
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::isValid
+//【函数功能】验证神经网络的结构是否正确
+//【参数】无
+//【返回值】bool - 如果网络结构正确返回true，否则返回false
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
 bool Network::isValid() const {
     // 检查网络是否为空
     if (layers.empty()) {
@@ -276,14 +427,53 @@ bool Network::isValid() const {
     
     return true;
 }
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::getLayer
+//【函数功能】获取指定索引的层
+//【参数】index - 层的索引
+//【返回值】const Layer* - 指向指定层的指针，如果索引超出范围则抛出异常
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
+const Layer* Network::getLayer(int index) const {
+    if (index < 0 || index >= layerCount) {
+        std::cerr << "Error: Layer index out of range.\n";
+        throw std::out_of_range("Layer index out of range");
+    }
+    auto it = layers.begin();
+    std::advance(it, index);
+    return *it;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::getLayers
+//【函数功能】获取神经网络中的所有层
+//【参数】无
+//【返回值】const std::list<Layer*>& - 包含所有层的列表
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
 const std::list<Layer*>& Network::getLayers() const {
     return layers;
 }
-
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::getLayerCount
+//【函数功能】获取神经网络的层数
+//【参数】无
+//【返回值】int - 神经网络的层数
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
 int Network::getLayerCount() const {
     return layerCount;
 }
-
+//-------------------------------------------------------------------------------------------------------------------
+//【函数名称】Network::~Network
+//【函数功能】Network类的析构函数，释放所有动态分配的Layer
+//【参数】无
+//【返回值】无
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
 Network::~Network() {
     // 释放所有动态分配的 Layer 对象
     for (auto& layer : layers) {

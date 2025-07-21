@@ -1,4 +1,4 @@
 OS: Windows_NT x64 10.0.26100
 IDE: vscode x64 1.102.0
 compiler: clang 20.1.8 with x86_64-pc-windows-msvc
-compile command: "clang++ -std=c++14 -Wall -o main.exe .\main.cpp .\ActivationFunc.cpp .\Neuron.cpp .\Soma.cpp .\Synapse.cpp .\Layer.cpp .\Network.cpp .\ANNFilePorter.cpp ; if ($?) { .\main.exe }"
+compile command: "clang++ -std=c++14 -Wall -o main.exe .\*.cpp ; if ($?) { .\main.exe }"

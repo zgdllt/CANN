@@ -1,3 +1,10 @@
+//-------------------------------------------------------------------------------------------------------------------
+//【文件名】Neuron.hpp
+//【功能模块和目的】神经元类的声明，定义了人工神经网络中神经元的基本功能和接口
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
+
 #ifndef NEURON_HPP
 #define NEURON_HPP
 #include "Soma.hpp"
@@ -5,7 +12,16 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
+
+//-------------------------------------------------------------------------------------------------------------------
+//【类名】Neuron
+//【功能】实现人工神经网络中的神经元，继承自Soma类，提供神经元的连接、权重设置、信号传播等功能
+//【接口说明】提供构造函数、连接管理、权重设置、信号处理、层级管理等公有接口
+//【开发者及日期】开发者姓名 2025年7月21日
+//【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
 class Neuron:public Soma{
+    friend class Layer;  // 允许Layer类访问私有成员
 public:
     Neuron(const Neuron& other) = default; // Copy constructor
     Neuron(std::vector<Synapse*> pre = {}, double bias = 0.0, int activationFunctionType = 0,int layerIndex = 0, int idx = 0);
@@ -16,9 +32,11 @@ public:
     void setWeights(const std::vector<double>& weights);
     void setWeight(int index, double weight);
     void showConnections() const;
+    int getDendriteCount() const;
     int getIndex() const;
     int getLayerIndex() const;
     void setLayerIndex(int newLayerIndex);
+    void setIndex(int newIndex);
     void setBias(double newBias);
     void remove();
     void updateInput();

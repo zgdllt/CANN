@@ -10,6 +10,7 @@
 #include "Synapse.hpp"
 #include <vector>
 #include <algorithm>
+#include <stdexcept>
 
 //-------------------------------------------------------------------------------------------------------------------
 //【函数名称】Neuron::Neuron

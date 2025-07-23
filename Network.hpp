@@ -23,7 +23,7 @@
 class Network {
 public:
     Network();
-    Network(const Network& other); 
+    Network(const Network& other);
     Network& operator=(const Network& other);
     void addLayer(Layer* layer);
     std::vector<std::vector<double>> forward(const std::vector<double>& inputs);

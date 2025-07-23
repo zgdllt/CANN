@@ -9,6 +9,7 @@
 #include "Synapse.hpp"
 #include <iostream>
 #include <vector>
+#include <stdexcept>
 
 //-------------------------------------------------------------------------------------------------------------------
 //【函数名称】Layer::Layer

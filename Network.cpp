@@ -11,6 +11,8 @@
 #include "Soma.hpp"
 #include <cstddef>
 #include <iostream>
+#include <stdexcept>
+#include <exception>
 
 //-------------------------------------------------------------------------------------------------------------------
 //【函数名称】Network::Network
@@ -25,20 +27,56 @@ Network::Network() {
 }
 //-------------------------------------------------------------------------------------------------------------------
 // 【函数名称】Network::Network
-// 【函数功能】Network类的拷贝构造函数，深拷贝网络的层
+// 【函数功能】Network类的拷贝构造函数，使用addLayer等函数从基础结构重新构建网络
 // 【参数】other - 另一个Network对象的引用
 // 【返回值】无
 // 【开发者及日期】李孟涵 2025年7月21日
 // 【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
-Network::Network(const Network& other) {
+Network::Network(const Network& other) : layerCount(0) {
+    // 逐层重新构建网络
     for (const auto* layer : other.layers) {
-        layers.push_back(new Layer(*layer));
+        // 收集该层神经元的偏置值
+        std::vector<double> biases;
+        const auto& neurons = layer->getNeurons();
+        for (const auto& neuron : neurons) {
+            biases.push_back(neuron.getBias());
+        }
+        
+        // 使用第一个神经元的激活函数类型作为整层的激活函数
+        int activationType = 0;
+        if (!neurons.empty()) {
+            activationType = neurons[0].getActivationFunctionType();
+        }
+        
+        // 创建新层并添加到网络中
+        Layer* newLayer = new Layer(layerCount, layer->getNeuronCount(), biases, activationType);
+        addLayer(newLayer);
+    }
+    
+    // 设置权重（跳过第一层，因为它没有输入权重）
+    for (int layerIdx = 1; layerIdx < layerCount; ++layerIdx) {
+        const auto* sourceLayer = other.getLayer(layerIdx);
+        const auto& sourceNeurons = sourceLayer->getNeurons();
+        
+        // 构建权重矩阵
+        std::vector<std::vector<double>> weights;
+        for (const auto& neuron : sourceNeurons) {
+            weights.push_back(neuron.getWeights());
+        }
+        
+        // 设置权重
+        try {
+            setWeights(layerIdx, weights);
+        } catch (const std::exception& e) {
+            std::cerr << "Warning: Failed to set weights for layer " << layerIdx 
+                      << " during copy construction: " << e.what() << std::endl;
+        }
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
 // 【函数名称】Network::operator=
-// 【函数功能】Network类的赋值运算符，深拷贝网络的层
+// 【函数功能】Network类的赋值运算符，使用addLayer等函数从基础结构重新构建网络
 // 【参数】other - 另一个Network对象的引用
 // 【返回值】Network& - 返回当前对象的引用
 // 【开发者及日期】李孟涵 2025年7月21日
@@ -51,10 +89,46 @@ Network& Network::operator=(const Network& other) {
             delete layer;
         }
         layers.clear();
-        this->layerCount = other.layerCount;
-        // 深拷贝其他对象的资源
+        layerCount = 0;
+        
+        // 逐层重新构建网络
         for (const auto* layer : other.layers) {
-            layers.push_back(new Layer(*layer));
+            // 收集该层神经元的偏置值
+            std::vector<double> biases;
+            const auto& neurons = layer->getNeurons();
+            for (const auto& neuron : neurons) {
+                biases.push_back(neuron.getBias());
+            }
+            
+            // 使用第一个神经元的激活函数类型作为整层的激活函数
+            int activationType = 0;
+            if (!neurons.empty()) {
+                activationType = neurons[0].getActivationFunctionType();
+            }
+            
+            // 创建新层并添加到网络中
+            Layer* newLayer = new Layer(layerCount, layer->getNeuronCount(), biases, activationType);
+            addLayer(newLayer);
+        }
+        
+        // 设置权重（跳过第一层，因为它没有输入权重）
+        for (int layerIdx = 1; layerIdx < layerCount; ++layerIdx) {
+            const auto* sourceLayer = other.getLayer(layerIdx);
+            const auto& sourceNeurons = sourceLayer->getNeurons();
+            
+            // 构建权重矩阵
+            std::vector<std::vector<double>> weights;
+            for (const auto& neuron : sourceNeurons) {
+                weights.push_back(neuron.getWeights());
+            }
+            
+            // 设置权重
+            try {
+                setWeights(layerIdx, weights);
+            } catch (const std::exception& e) {
+                std::cerr << "Warning: Failed to set weights for layer " << layerIdx 
+                          << " during assignment: " << e.what() << std::endl;
+            }
         }
     }
     return *this;
@@ -198,53 +272,113 @@ std::vector<std::vector<double>> Network::forward(const std::vector<double>& inp
 //【开发者及日期】李孟涵 2025年7月21日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
-void Network::deleteLayer(int index)
-{
+// void Network::deleteLayer(int index)
+// {
+//     if (index < 0 || index >= layerCount) {
+//         std::cerr << "Error: Layer index out of range.\n";
+//         throw std::out_of_range("Layer index out of range");
+//     }
+    
+//     auto it = layers.begin();
+//     std::advance(it, index);
+//     Layer* layerToDelete = *it;
+    
+//     if (layerCount == 1) {
+//         // 如果只有一层，先清理所有连接再删除
+//         layerToDelete->removeAllConnections();
+//         delete layerToDelete;
+//         layers.clear();
+//         layerCount = 0;
+//         return;
+//     }
+    
+//     // === 第一步：收集要删除层中所有神经元的指针 ===
+//     std::vector<Neuron*> invalidNeurons;
+//     for (const auto& neuron : layerToDelete->getNeurons()) {
+//         invalidNeurons.push_back(const_cast<Neuron*>(&neuron));
+//     }
+    
+//     // === 第二步：清理所有其他层中指向被删除层的突触 ===
+//     for (auto& layer : layers) {
+//         if (layer != layerToDelete) {
+//             for (auto& neuron : layer->getNeurons()) {
+//                 const_cast<Neuron&>(neuron).cleanInvalidSynapses(invalidNeurons);
+//             }
+//         }
+//     }
+    
+//     // === 第三步：清理当前层内部的所有突触和神经元连接 ===
+//     layerToDelete->removeAllConnections();
+    
+//     // === 第四步：更新层级连接 ===
+//     if (layerToDelete->getPreviousLayer()) {
+//         layerToDelete->getPreviousLayer()->setNextLayer(nullptr);
+//     }
+//     if (layerToDelete->getNextLayer()) {
+//         layerToDelete->getNextLayer()->setPreviousLayer(nullptr);
+//     }
+    
+//     // === 第五步：重新建立相邻层的连接 ===
+//     if (index > 0 && index < layerCount - 1) {
+//         // 中间层：连接前一层和后一层
+//         auto pre = layers.begin();
+//         std::advance(pre, index - 1);
+//         auto next = layers.begin();
+//         std::advance(next, index + 1);
+//         (*pre)->connectTo(*next);
+//     }
+//     else if(index == 0 && layerCount > 1) {
+//         // 删除第一层：下一层成为新的第一层
+//         auto next = layers.begin();
+//         std::advance(next, 1);
+//         (*next)->setPreviousLayer(nullptr);
+//     }
+//     else if(index == layerCount - 1 && layerCount > 1) {
+//         // 删除最后一层：前一层成为新的最后一层
+//         auto pre = layers.begin();
+//         std::advance(pre, layerCount - 2);
+//         (*pre)->setNextLayer(nullptr);
+//     }
+    
+//     // === 第六步：更新后续层的索引 ===
+//     auto iter = layers.begin();
+//     std::advance(iter, index + 1);
+//     for (; iter != layers.end(); ++iter) {
+//         (*iter)->setIndex((*iter)->getIndex() - 1);
+//     }
+    
+//     // === 第七步：从容器中移除并删除层对象 ===
+//     layers.erase(it);
+//     delete layerToDelete;  // 释放内存
+//     layerCount--;
+// }
+void Network::deleteLayer(int index) {
     if (index < 0 || index >= layerCount) {
         std::cerr << "Error: Layer index out of range.\n";
         throw std::out_of_range("Layer index out of range");
     }
     
-    auto it = layers.begin();
-    std::advance(it, index);
-    Layer* layerToDelete = *it;
-    
     if (layerCount == 1) {
-        // 如果只有一层，先清理所有连接再删除
-        layerToDelete->removeAllConnections();
-        delete layerToDelete;
+        // 如果只有一层，直接清空
         layers.clear();
         layerCount = 0;
         return;
     }
     
-    // === 第一步：收集要删除层中所有神经元的指针 ===
-    std::vector<Neuron*> invalidNeurons;
-    for (const auto& neuron : layerToDelete->getNeurons()) {
-        invalidNeurons.push_back(const_cast<Neuron*>(&neuron));
+    // 更新后续层的索引
+    auto iter = layers.begin();
+    std::advance(iter, index + 1);
+    for (; iter != layers.end(); ++iter) {
+        (*iter)->setIndex((*iter)->getIndex() - 1);
     }
     
-    // === 第二步：清理所有其他层中指向被删除层的突触 ===
-    for (auto& layer : layers) {
-        if (layer != layerToDelete) {
-            for (auto& neuron : layer->getNeurons()) {
-                const_cast<Neuron&>(neuron).cleanInvalidSynapses(invalidNeurons);
-            }
-        }
-    }
+    auto it = layers.begin();
+    std::advance(it, index);
     
-    // === 第三步：清理当前层内部的所有突触和神经元连接 ===
-    layerToDelete->removeAllConnections();
+    // 断开当前层的连接
+    (*it)->connectTo(nullptr);
     
-    // === 第四步：更新层级连接 ===
-    if (layerToDelete->getPreviousLayer()) {
-        layerToDelete->getPreviousLayer()->setNextLayer(nullptr);
-    }
-    if (layerToDelete->getNextLayer()) {
-        layerToDelete->getNextLayer()->setPreviousLayer(nullptr);
-    }
-    
-    // === 第五步：重新建立相邻层的连接 ===
+    // 连接前一层和后一层
     if (index > 0 && index < layerCount - 1) {
         // 中间层：连接前一层和后一层
         auto pre = layers.begin();
@@ -263,61 +397,14 @@ void Network::deleteLayer(int index)
         // 删除最后一层：前一层成为新的最后一层
         auto pre = layers.begin();
         std::advance(pre, layerCount - 2);
+        (*pre)->disconnect();
         (*pre)->setNextLayer(nullptr);
     }
     
-    // === 第六步：更新后续层的索引 ===
-    auto iter = layers.begin();
-    std::advance(iter, index + 1);
-    for (; iter != layers.end(); ++iter) {
-        (*iter)->setIndex((*iter)->getIndex() - 1);
-    }
-    
-    // === 第七步：从容器中移除并删除层对象 ===
+    // 删除当前层
     layers.erase(it);
-    delete layerToDelete;  // 释放内存
     layerCount--;
 }
-// void Network::deleteLayer(int index) {
-//     if (index < 0 || index >= layerCount) {
-//         std::cerr << "Error: Layer index out of range.\n";
-//         throw std::out_of_range("Layer index out of range");
-//     }
-    
-//     if (layerCount == 1) {
-//         // 如果只有一层，直接清空
-//         layers.clear();
-//         layerCount = 0;
-//         return;
-//     }
-    
-//     // 更新后续层的索引
-//     auto iter = layers.begin();
-//     std::advance(iter, index + 1);
-//     for (; iter != layers.end(); ++iter) {
-//         (*iter)->setIndex((*iter)->getIndex() - 1);
-//     }
-    
-//     auto it = layers.begin();
-//     std::advance(it, index);
-    
-//     // 断开当前层的连接
-//     (*it)->connectTo(nullptr);
-    
-//     // 连接前一层和后一层
-//     if (index > 0 && index < layerCount - 1) {
-//         // 中间层：连接前一层和后一层
-//         auto pre = layers.begin();
-//         std::advance(pre, index - 1);
-//         auto next = layers.begin();
-//         std::advance(next, index + 1);
-//         (*pre)->connectTo(*next);
-//     }
-    
-//     // 删除当前层
-//     layers.erase(it);
-//     layerCount--;
-// }
 //-------------------------------------------------------------------------------------------------------------------
 //【函数名称】Network::addLayer
 //【函数功能】在神经网络中添加一个新的层

@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <stdexcept>
 
 enum class FilePorterType { IMPORTER,
     EXPORTER };

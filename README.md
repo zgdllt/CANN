@@ -406,10 +406,6 @@ network.getLayer(0)->getNeuron(0).showConnections();
 - 损失函数计算
 - 训练循环管理
 
-## 许可证
-
-本项目可在GitHub上获取：https://github.com/zgdllt/CANN
-
 ## 更新历史
 
 - **v1.0** (2025-07-24): 初始版本发布

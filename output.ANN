@@ -1,0 +1,12 @@
+# output.ANN
+G RotationNetwork
+# Neurons
+N 0 0
+N 0 0
+N 0 0
+# Layers
+L 0 2
+# Synapses
+S -1 0 1.0
+S -1 1 1.0
+S -1 2 1.0

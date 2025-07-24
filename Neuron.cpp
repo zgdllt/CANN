@@ -1,32 +1,33 @@
 //-------------------------------------------------------------------------------------------------------------------
 //【文件名】Neuron.cpp
 //【功能模块和目的】神经元类的实现，包含神经元的所有功能实现
-//【开发者及日期】李孟涵 2025年7月21日
-//【更改记录】无
+//【开发者及日期】李孟涵 2025年7月13日
+//【更改记录】2025年7月13日 不将树突轴突作为两个类 2025年7月21日 新增去除无效连接功能
 //-------------------------------------------------------------------------------------------------------------------
 
-#include "Neuron.hpp"
-#include "Soma.hpp"
-#include "Synapse.hpp"
-#include <vector>
-#include <algorithm>
-#include <stdexcept>
+#include "Neuron.hpp"     // 神经元类头文件
+#include "Soma.hpp"       // 胞体类头文件
+#include "Synapse.hpp"    // 突触类头文件
+#include <vector>         // vector所在头文件
+#include <algorithm>      // 算法库
+#include <stdexcept>      // 异常处理头文件
+#include <iostream>       // 输入输出流头文件
 
 //-------------------------------------------------------------------------------------------------------------------
 //【函数名称】Neuron::Neuron
 //【函数功能】Neuron类的构造函数，初始化神经元的基本属性和连接
 //【参数】pre - 前驱突触指针向量，bias - 偏置值，activationFunctionType - 激活函数类型，layerIndex - 层索引，index - 神经元索引
 //【返回值】无
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 Neuron::Neuron(std::vector<Synapse*> pre, double bias, int activationFunctionType, int layerIndex, int index)
     : Soma({},bias, activationFunctionType), layerIndex(layerIndex), index(index)
 {
     for (auto& synapse : pre) {
-        synapse->setNxt(this);
-        Dendrites.push_back(synapse);
-        Soma::addInput(synapse->getSignal());
+        synapse->setNxt(this);                      // 设置突触的下一个神经元为当前神经元
+        Dendrites.push_back(synapse);          // 将突触添加到树突中
+        Soma::addInput(synapse->getSignal());// 添加突触信号到胞体输入
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -34,15 +35,17 @@ Neuron::Neuron(std::vector<Synapse*> pre, double bias, int activationFunctionTyp
 //【函数功能】判断当前神经元是否与另一个神经元连接
 //【参数】other - 另一个神经元的引用
 //【返回值】bool - 是否连接
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
-bool Neuron::isConnectedTo(const Neuron& other) const {
+bool Neuron::isConnectedTo(const Neuron& other) const{
+    // 检查当前神经元的树突是否连接到另一个神经元
     for (const auto& dendrite : Dendrites) {
         if (dendrite->getPre() == &other) {
             return true;
         }
     }
+    // 检查是否有其他神经元的树突连接到当前神经元
     for (const auto& dendrite : other.Dendrites) {
         if (dendrite->getPre() == this) {
             return true;
@@ -55,16 +58,17 @@ bool Neuron::isConnectedTo(const Neuron& other) const {
 //【函数功能】将当前神经元连接到另一个神经元
 //【参数】other - 目标神经元指针，weight - 突触权重
 //【返回值】无
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Neuron::connectTo(Neuron* other, double weight) {
-    if (other != nullptr && other->layerIndex - 1 == layerIndex && !isConnectedTo(*other)) {
-        Synapse* synapse = new Synapse(Soma::getOutput(), weight, this, other);
-        other->Dendrites.push_back(synapse);
-        Axon.push_back(synapse);
+    if (other != nullptr && other->layerIndex - 1 == layerIndex && !isConnectedTo(*other)) {// 确保连接的神经元在前一层且未连接
+        // 创建新的突触并连接
+        Synapse* synapse = new Synapse(Soma::getOutput(), weight, this, other);// 突触的输出来自当前神经元的胞体
+        other->Dendrites.push_back(synapse);                                              // 将突触添加到目标神经元的树突中
+        Axon.push_back(synapse);                                                          // 将突触添加到当前神经元的轴突中
     }
-    else {
+    else {// 如果神经元无效或已连接，输出错误信息并抛出异常
         std::cerr << "Cannot connect: invalid neuron or already connected. "
                   << "From Neuron(layer=" << layerIndex << ", index=" << index << ") "
                   << "To Neuron(layer=" << (other ? other->layerIndex : -1) << ", index=" << (other ? other->index : -1) << ")\n";
@@ -76,20 +80,21 @@ void Neuron::connectTo(Neuron* other, double weight) {
 //【函数功能】断开当前神经元与另一个神经元的连接
 //【参数】other - 目标神经元指针
 //【返回值】无
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Neuron::disconnectTo(Neuron* other) {
-    if (other != nullptr && isConnectedTo(*other)) {
+    if (other != nullptr && isConnectedTo(*other)) { // 确保断开连接的神经元存在且已连接
+        // 遍历目标神经元的树突，找到与当前神经元连接的突触
         for (auto it = other->Dendrites.begin(); it != other->Dendrites.end(); ++it) {
             if ((*it)->getPre() == this) {
-                Axon.erase(std::remove(Axon.begin(), Axon.end(), *it), Axon.end());
-                delete *it; // Free memory
-                other->Dendrites.erase(it);
+                Axon.erase(std::remove(Axon.begin(), Axon.end(), *it), Axon.end());// 从当前神经元的轴突中移除突触
+                delete *it; // 释放突触内存
+                other->Dendrites.erase(it);// 从目标神经元的树突中移除突触
                 return;
             }
         }
-    } else {
+    } else {// 如果神经元无效或未连接，输出错误信息并抛出异常
         std::cerr << "Cannot disconnect: invalid neuron or not connected. "
                   << "From Neuron(layer=" << layerIndex << ", index=" << index << ") "
                   << "To Neuron(layer=" << (other ? other->layerIndex : -1) << ", index=" << (other ? other->index : -1) << ")\n";
@@ -101,7 +106,7 @@ void Neuron::disconnectTo(Neuron* other) {
 // 【函数功能】获取神经元所在层的索引
 // 【参数】无
 // 【返回值】int - 神经元所在层的索引
-// 【开发者及日期】李孟涵 2025年7月21日
+// 【开发者及日期】李孟涵 2025年7月13日
 // 【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 int Neuron::getLayerIndex() const {
@@ -112,7 +117,7 @@ int Neuron::getLayerIndex() const {
 // 【函数功能】获取神经元在层内的索引
 // 【参数】无
 // 【返回值】int - 神经元在层内的索引
-// 【开发者及日期】李孟涵 2025年7月21日
+// 【开发者及日期】李孟涵 2025年7月13日
 // 【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 int Neuron::getIndex() const {
@@ -123,24 +128,35 @@ int Neuron::getIndex() const {
 // 【函数功能】获取神经元的树突数量
 // 【参数】无
 // 【返回值】int - 神经元的树突数量
-// 【开发者及日期】李孟涵 2025年7月21日
+// 【开发者及日期】李孟涵 2025年7月13日
 // 【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 int Neuron::getDendriteCount() const {
     return Dendrites.size();
 }
 //-------------------------------------------------------------------------------------------------------------------
+// 【函数名称】Neuron::getAxonCount
+// 【函数功能】获取神经元的轴突数量
+// 【参数】无
+// 【返回值】int - 神经元的轴突数量
+// 【开发者及日期】李孟涵 2025年7月13日
+// 【更改记录】无
+//---------------------------------------------------------------------------------------------------------
+int Neuron::getAxonCount() const {
+    return Axon.size();
+}
+//-------------------------------------------------------------------------------------------------------------------
 //【函数名称】Neuron::getWeights
 //【函数功能】获取当前神经元所有突触的权重
 //【参数】无
 //【返回值】std::vector<double> - 突触权重的向量
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 std::vector<double> Neuron::getWeights() const {
     std::vector<double> weights;
     for (const auto& dendrite : Dendrites) {
-        weights.push_back(dendrite->getWeight());
+        weights.push_back(dendrite->getWeight());// 收集所有树突的权重
     }
     return weights;
 }
@@ -149,11 +165,11 @@ std::vector<double> Neuron::getWeights() const {
 // 【函数功能】设置当前神经元的突触权重
 // 【参数】weights - 突触权重的向量
 // 【返回值】无
-// 【开发者及日期】李孟涵 2025年7月21日
+// 【开发者及日期】李孟涵 2025年7月13日
 // 【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Neuron::setWeights(const std::vector<double>& weights) {
-    if (weights.size() != Dendrites.size()) {
+    if (weights.size() != Dendrites.size()) {// 确保权重向量的大小与树突数量匹配
         std::cerr << "Error: Weights size does not match the number of dendrites.\n";
         throw std::invalid_argument("Weights size does not match the number of dendrites.");
     }
@@ -165,7 +181,7 @@ void Neuron::setWeights(const std::vector<double>& weights) {
 //【函数功能】设置神经元在层内的索引
 //【参数】newIndex - 新的索引值
 //【返回值】无
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Neuron::setIndex(int newIndex) {
@@ -176,7 +192,7 @@ void Neuron::setIndex(int newIndex) {
 //【函数功能】设置神经元所在层的索引
 //【参数】newLayerIndex - 新的层索引值
 //【返回值】无
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Neuron::setLayerIndex(int newLayerIndex) {
@@ -187,7 +203,7 @@ void Neuron::setLayerIndex(int newLayerIndex) {
 //【函数功能】设置神经元的偏置值
 //【参数】newBias - 新的偏置值
 //【返回值】无
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Neuron::setBias(double newBias) {
@@ -198,29 +214,27 @@ void Neuron::setBias(double newBias) {
 //【函数功能】移除当前神经元的所有连接
 //【参数】无
 //【返回值】无
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Neuron::remove() {
-    // Remove all outgoing connections (Axon)
+    // 删除所有输出连接（轴突）
     for (auto* synapse : Axon) {
         if (synapse) {
             Neuron* postNeuron = synapse->getNxt();
             if (postNeuron) {
                 auto& dendrites = postNeuron->Dendrites;
                 dendrites.erase(std::remove(dendrites.begin(), dendrites.end(), synapse), dendrites.end());
-                dendrites.erase(std::remove(dendrites.begin(), dendrites.end(), synapse), dendrites.end());
             }
             delete synapse;
         }
     }
     Axon.clear();
-    // Remove all incoming connections (Dendrites)
+    // 删除所有输入连接（树突）
     for (auto* synapse : Dendrites) {
         if (synapse) {
             Neuron* preNeuron = synapse->getPre();
             if (preNeuron) {
-                preNeuron->Axon.erase(std::remove(preNeuron->Axon.begin(), preNeuron->Axon.end(), synapse), preNeuron->Axon.end());
                 preNeuron->Axon.erase(std::remove(preNeuron->Axon.begin(), preNeuron->Axon.end(), synapse), preNeuron->Axon.end());
             }
             delete synapse;
@@ -259,7 +273,6 @@ void Neuron::cleanInvalidSynapses(const std::vector<Neuron*>& invalidNeurons) {
             ++axonIt;
         }
     }
-    
     // 清理树突中来自无效神经元的突触
     for (auto dendriteIt = Dendrites.begin(); dendriteIt != Dendrites.end();) {
         Synapse* synapse = *dendriteIt;
@@ -288,18 +301,18 @@ void Neuron::cleanInvalidSynapses(const std::vector<Neuron*>& invalidNeurons) {
 //【函数功能】更新神经元的输入信号
 //【参数】无
 //【返回值】无
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Neuron::updateInput() {
     std::vector<double> inputs;
     for (const auto& dendrite : Dendrites) {
-        dendrite->setInput(dendrite->getPre() != nullptr ? dendrite->getPre()->getOutput() : 0.0);
+        dendrite->setInput(dendrite->getPre() != nullptr ? dendrite->getPre()->getOutput() : 0.0);// 设置树突输入信号
     }
     for (const auto& dendrite : Dendrites) {
-        inputs.push_back(dendrite->getSignal());
+        inputs.push_back(dendrite->getSignal());// 收集所有树突的输入信号
     }
-    Soma::setInputs(inputs); // Set the inputs to Soma
+    Soma::setInputs(inputs); // 设置细胞体输入信号
 }
 
 //-------------------------------------------------------------------------------------------------------------------
@@ -307,25 +320,24 @@ void Neuron::updateInput() {
 //【函数功能】更新神经元的输出信号
 //【参数】无
 //【返回值】无
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Neuron::updateOutput() {
     if (layerIndex != 0) {
-        updateInput(); // Update inputs from Dendrites
+        updateInput(); // 更新树突输入信号
     }
-    Soma::updateOutput(); // Update the Soma output
-    // Update Axon signals based on the Soma output
+    Soma::updateOutput(); // 更新细胞体输出信号
     for (auto& synapse : Axon) {
         synapse->setInput(Soma::getOutput());
-    }
+    }// 更新轴突信号，基于细胞体输出
 }
 //-------------------------------------------------------------------------------------------------------------------
 // 【函数名称】Neuron::showConnections
 // 【函数功能】显示当前神经元的连接信息
 // 【参数】无
 // 【返回值】无
-// 【开发者及日期】李孟涵 2025年7月21日
+// 【开发者及日期】李孟涵 2025年7月13日
 // 【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Neuron::showConnections() const {
@@ -337,7 +349,7 @@ void Neuron::showConnections() const {
                       << ", index=" << dendrite->getPre()->index << ") with weight "
                       << dendrite->getWeight() << "\n";
         }
-    }
+    }// 输出当前神经元的树突连接信息
     std::cout << "  Axon (outgoing connections):\n";
     for (const auto& synapse : Axon) {
         if (synapse->getNxt()) {
@@ -345,5 +357,5 @@ void Neuron::showConnections() const {
                       << ", index=" << synapse->getNxt()->index << ") with weight "
                       << synapse->getWeight() << "\n";
         }
-    }
+    }// 输出当前神经元的轴突连接信息
 }

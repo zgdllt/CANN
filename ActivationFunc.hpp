@@ -1,7 +1,7 @@
 //-------------------------------------------------------------------------------------------------------------------
 //【文件名】ActivationFunc.hpp
 //【功能模块和目的】激活函数类的声明，提供神经网络中常用的激活函数实现
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 
@@ -12,15 +12,15 @@
 //【类名】ActivationFunc
 //【功能】提供神经网络中常用的激活函数，包括sigmoid、tanh、ReLU和线性函数
 //【接口说明】提供静态方法实现各类激活函数
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 class ActivationFunc {
 public:
-    static double sigmoid(double x);
-    static double tanh(double x);
-    static double relu(double x);
-    static double linear(double x);
+    static double sigmoid(double x); // Sigmoid 激活函数
+    static double tanh(double x); // 双曲正切激活函数
+    static double relu(double x); // ReLU 激活函数
+    static double linear(double x); // 线性激活函数 （默认）
 };
 
 #endif // ACTIVATION_FUNC_HPP

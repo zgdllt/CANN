@@ -1,30 +1,28 @@
 //-------------------------------------------------------------------------------------------------------------------
 //【文件名】FilePorter.hpp
 //【功能模块和目的】文件操作基类的声明，提供文件导入导出的通用功能
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月20日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 
-#ifndef FILE_HPP
-#define FILE_HPP
+#ifndef FILEPORTER_HPP
+#define FILEPORTER_HPP
 
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <vector>
-#include <stdexcept>
+#include <string>   // 字符串头文件
+#include <fstream>  // 文件流头文件
+#include <vector>   // 向量头文件
+#include <stdexcept>// 标准异常头文件
 
-enum class FilePorterType { IMPORTER,
-    EXPORTER };
+enum class FilePorterType { IMPORTER, EXPORTER };// 文件操作类型枚举，区分导入器和导出器
 
 //-------------------------------------------------------------------------------------------------------------------
 //【类名】FilePorter
 //【功能】提供文件操作的基础功能，支持文件类型检测、打开状态检测等
 //【接口说明】模板类，根据FilePorterType枚举决定是导入器还是导出器
-//【开发者及日期】李孟涵 2025年7月21日
+//【开发者及日期】李孟涵 2025年7月20日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
-template<FilePorterType ENUM>
+template<FilePorterType ENUM>// 定义模板，只能从FilePorterType枚举中选择是IMPORTER或EXPORTER
 class FilePorter {
 public:
     // 构造函数，初始化文件名和支持的扩展名列表
@@ -49,9 +47,9 @@ public:
         filename = newFilename;
     }
 
-    // 测试文件类型是否受支持
+    // 测试扩展名是否正确
     void FileTypeTest(const std::string& /* FileName */, const std::string& ExtName) {
-        if (ExtName.empty()) {
+        if (ExtName.empty()) {// 如果扩展名为空，抛出异常
             throw INVALID_FILE_TYPE(ExtName);
         }
         bool isSupported = false;
@@ -61,7 +59,7 @@ public:
                 break;
             }
         }
-        if (!isSupported) {
+        if (!isSupported) {// 如果扩展名不在支持列表中，抛出异常
             throw INVALID_FILE_TYPE(ExtName);
         }
     }
@@ -125,4 +123,4 @@ private:
     static constexpr FilePorterType PORT_TYPE = ENUM;
 };
 
-#endif // FILE_HPP
+#endif // FILEPORTER_HPP

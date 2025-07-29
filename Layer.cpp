@@ -6,6 +6,7 @@
 //-------------------------------------------------------------------------------------------------------------------
 
 #include "Layer.hpp"      // 包含层类头文件
+#include "Network.hpp"
 #include "Synapse.hpp"    // 包含突触类头文件
 #include <iostream>       // 输入输出流头文件
 #include <vector>         // vector所在头文件
@@ -19,16 +20,16 @@
 //【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
-Layer::Layer(int index,int neuronCount, std::vector<double> biases, int activationFunctionType)
+Layer::Layer(Network* network, int neuronCount, std::vector<double> biases, int activationFunctionType)
 {
-    this->index = index;// 设置层索引
+    this->network = network; // 设置所属网络
     this->previousLayer = nullptr;// 设置前一层为空
     this->nextLayer = nullptr;// 设置下一层为空
     if (biases.size() < neuronCount) {
         biases.resize(neuronCount, 0.0); // 确保偏置向量有足够的元素, 如果不足默认设置为0.0
     }
     for (size_t i = 0; i < neuronCount; ++i) {
-        neurons.emplace_back(std::vector<Synapse*>(), biases[i], activationFunctionType, index, i);// 创建神经元并添加到当前层
+        neurons.emplace_back(std::vector<Synapse*>(), biases[i], activationFunctionType, this);// 创建神经元并添加到当前层
     }
 }
 
@@ -120,12 +121,6 @@ void Layer::deleteNeuron(int index)
     
     // 删除神经元
     neurons.erase(neurons.begin() + index);
-    
-    // 更新后续神经元的索引
-    for (int i = index; i < static_cast<int>(neurons.size()); ++i) {
-        neurons[i].setLayerIndex(this->index);
-        neurons[i].setIndex(i);
-    }
 }
 //-------------------------------------------------------------------------------------------------------------------
 //【函数名称】Layer::getNeurons
@@ -190,33 +185,6 @@ int Layer::getNeuronCount() const {
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-//【函数名称】Layer::getIndex
-//【函数功能】获取当前层的索引
-//【参数】无
-//【返回值】int - 当前层的索引
-//【开发者及日期】李孟涵 2025年7月13日
-//【更改记录】无
-//-------------------------------------------------------------------------------------------------------------------
-int Layer::getIndex() const {
-    return index;
-}
-
-//-------------------------------------------------------------------------------------------------------------------
-//【函数名称】Layer::setIndex
-//【函数功能】设置当前层的索引
-//【参数】newIndex - 新的层索引
-//【返回值】无
-//【开发者及日期】李孟涵 2025年7月13日
-//【更改记录】无
-//-------------------------------------------------------------------------------------------------------------------
-void Layer::setIndex(int newIndex) {
-    index = newIndex;
-    for (auto& neuron : neurons) {
-        neuron.setLayerIndex(newIndex);
-    }
-}
-
-//-------------------------------------------------------------------------------------------------------------------
 //【函数名称】Layer::setBias
 //【函数功能】设置指定神经元的偏置值
 //【参数】neuronIndex - 神经元索引，newBias - 新的偏置值
@@ -275,8 +243,8 @@ bool Layer::isConnectedTo(const Layer& other) const {
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Layer::printNeurons() const {
-    for (const auto& neuron : neurons) {
-        std::cout << "Neuron Index: " << neuron.getIndex() << ", Layer Index: " << neuron.getLayerIndex() << ", bias: " << neuron.getBias() << "\n";
+    for (size_t i = 0; i < neurons.size(); ++i) {
+        std::cout << "Neuron Index: " << i << ", bias: " << neurons[i].getBias() << "\n";
     }
 }
 
@@ -432,4 +400,36 @@ void Layer::removeAllConnections() {
     for (auto& neuron : neurons) {
         neuron.remove();
     }
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 【函数名称】Layer::setNetwork
+// 【函数功能】设置当前层所属的网络
+// 【参数】newNetwork - 新的网络指针
+// 【返回值】无
+// 【开发者及日期】李孟涵 2025年7月29日
+// 【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
+void Layer::setNetwork(Network* newNetwork) {
+    network = newNetwork;
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 【函数名称】Layer::getIndex
+// 【函数功能】获取当前层在网络中的索引
+// 【参数】无
+// 【返回值】int - 当前层的索引
+// 【开发者及日期】李孟涵 2025年7月29日
+// 【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
+int Layer::getIndex() const {
+    if (network == nullptr) {
+        std::cerr << "Error: Network is not set for this layer.\n";
+        throw std::runtime_error("Network is not set for this layer");
+    }
+    int index = 0;
+    for (auto it = network->getLayers().begin(); it != network->getLayers().end(); ++it, ++index) {
+        if (*it == this) {
+            return index; // 返回当前层在网络中的索引
+        }
+    }
+    return -1; // 如果未找到，返回-1表示错误
 }

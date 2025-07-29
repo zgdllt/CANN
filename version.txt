@@ -1,4 +1,8 @@
 OS: Windows_NT x64 10.0.26100
-IDE: vscode x64 1.102.0
+IDE: vscode x64 1.102.1
 compiler: clang 20.1.8 with x86_64-pc-windows-msvc
 compile command: "clang++ -std=c++14 -Wall -o main.exe .\*.cpp ; if ($?) { .\main.exe }"
+
+[!note] use UTF-8 encode to avoid display error:"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8"  (in PowerShell)
+
+also available on github: https://github.com/zgdllt/CANN

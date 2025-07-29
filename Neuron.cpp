@@ -1,13 +1,15 @@
 //-------------------------------------------------------------------------------------------------------------------
-//【文件名】Neuron.cpp
-//【功能模块和目的】神经元类的实现，包含神经元的所有功能实现
-//【开发者及日期】李孟涵 2025年7月13日
-//【更改记录】2025年7月13日 不将树突轴突作为两个类 2025年7月21日 新增去除无效连接功能
+// 【文件名】Neuron.cpp
+// 【功能模块和目的】神经元类的实现，包含神经元的所有功能实现
+// 【开发者及日期】李孟涵 2025年7月13日
+// 【更改记录】2025年7月13日 不将树突轴突作为两个类 2025年7月21日 新增去除无效连接功能
+// 【更改记录】2025年7月29日 删除索引变量，改为基于网络内位置的动态计算
 //-------------------------------------------------------------------------------------------------------------------
 
 #include "Neuron.hpp"     // 神经元类头文件
 #include "Soma.hpp"       // 胞体类头文件
 #include "Synapse.hpp"    // 突触类头文件
+#include "Layer.hpp"      // 层类头文件
 #include <vector>         // vector所在头文件
 #include <algorithm>      // 算法库
 #include <stdexcept>      // 异常处理头文件
@@ -19,10 +21,10 @@
 //【参数】pre - 前驱突触指针向量，bias - 偏置值，activationFunctionType - 激活函数类型，layerIndex - 层索引，index - 神经元索引
 //【返回值】无
 //【开发者及日期】李孟涵 2025年7月13日
-//【更改记录】无
+//【更改记录】2025年7月29日 删除索引变量
 //-------------------------------------------------------------------------------------------------------------------
-Neuron::Neuron(std::vector<Synapse*> pre, double bias, int activationFunctionType, int layerIndex, int index)
-    : Soma({},bias, activationFunctionType), layerIndex(layerIndex), index(index)
+Neuron::Neuron(std::vector<Synapse*> pre, double bias, int activationFunctionType, Layer* layer)
+    : Soma({},bias, activationFunctionType), layer(layer)
 {
     for (auto& synapse : pre) {
         synapse->setNxt(this);                      // 设置突触的下一个神经元为当前神经元
@@ -59,21 +61,34 @@ bool Neuron::isConnectedTo(const Neuron& other) const{
 //【参数】other - 目标神经元指针，weight - 突触权重
 //【返回值】无
 //【开发者及日期】李孟涵 2025年7月13日
-//【更改记录】无
+//【更改记录】2025年7月29日 删除索引变量，改为基于层内位置的动态计算
 //-------------------------------------------------------------------------------------------------------------------
-void Neuron::connectTo(Neuron* other, double weight) {
-    if (other != nullptr && other->layerIndex - 1 == layerIndex && !isConnectedTo(*other)) {// 确保连接的神经元在前一层且未连接
-        // 创建新的突触并连接
-        Synapse* synapse = new Synapse(Soma::getOutput(), weight, this, other);// 突触的输出来自当前神经元的胞体
-        other->Dendrites.push_back(synapse);                                              // 将突触添加到目标神经元的树突中
-        Axon.push_back(synapse);                                                          // 将突触添加到当前神经元的轴突中
+void Neuron::connectTo(Neuron* other, double weight)
+{
+    if (layer == nullptr) {
+        std::cerr << "Cannot connect: this neuron has not been attached to a layer. ";
+        throw std::runtime_error("Cannot connect: layer is null.");
+                return; // 如果神经元未附加到层，直接返回
     }
-    else {// 如果神经元无效或已连接，输出错误信息并抛出异常
-        std::cerr << "Cannot connect: invalid neuron or already connected. "
-                  << "From Neuron(layer=" << layerIndex << ", index=" << index << ") "
-                  << "To Neuron(layer=" << (other ? other->layerIndex : -1) << ", index=" << (other ? other->index : -1) << ")\n";
-        throw std::runtime_error("Cannot connect: invalid neuron or already connected.");
+    try {
+        if (other != nullptr && other != this && other->layer == layer->getNextLayer() && !isConnectedTo(*other)) {// 确保连接的神经元在前一层且未连接
+            // 创建新的突触并连接
+            Synapse* synapse = new Synapse(Soma::getOutput(), weight, this, other);// 突触的输出来自当前神经元的胞体
+            other->Dendrites.push_back(synapse);                                              // 将突触添加到目标神经元的树突中
+            Axon.push_back(synapse);                                                          // 将突触添加到当前神经元的轴突中
+        }
+        else {// 如果神经元无效或已连接，输出错误信息并抛出异常
+            std::cerr << "Cannot connect: invalid neuron or already connected. "
+                    << "From Neuron(layer=" << getPosition().first << ", index=" << getPosition().second << ") "
+                    << "To Neuron(layer=" << (other ? other->getPosition().first : -1) << ", index=" << (other ? other->getPosition().second : -1) << ")\n";
+            throw std::runtime_error("Cannot connect: invalid neuron or already connected.");
+        }
     }
+    catch (const std::exception& e) {
+        std::cerr << "Error occurred while connecting neurons: " << e.what() << std::endl;
+        throw;
+    }
+    
 }
 //-------------------------------------------------------------------------------------------------------------------
 //【函数名称】Neuron::disconnectTo
@@ -96,32 +111,34 @@ void Neuron::disconnectTo(Neuron* other) {
         }
     } else {// 如果神经元无效或未连接，输出错误信息并抛出异常
         std::cerr << "Cannot disconnect: invalid neuron or not connected. "
-                  << "From Neuron(layer=" << layerIndex << ", index=" << index << ") "
-                  << "To Neuron(layer=" << (other ? other->layerIndex : -1) << ", index=" << (other ? other->index : -1) << ")\n";
+                  << "From Neuron(layer=" << getPosition().first << ", index=" << getPosition().second << ") "
+                  << "To Neuron(layer=" << (other ? other->getPosition().first : -1) << ", index=" << (other ? other->getPosition().second : -1) << ")\n";
         throw std::runtime_error("Cannot disconnect: invalid neuron or not connected.");
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-// 【函数名称】Neuron::getLayerIndex
-// 【函数功能】获取神经元所在层的索引
+// 【函数名称】Neuron::getPosition
+// 【函数功能】获取当前神经元在网络内的位置（索引）
 // 【参数】无
-// 【返回值】int - 神经元所在层的索引
-// 【开发者及日期】李孟涵 2025年7月13日
+// 【返回值】std::pair<int, int> - 神经元所在层的索引和在层内的索引
+// 【开发者及日期】李孟涵 2025年7月29日
 // 【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
-int Neuron::getLayerIndex() const {
-    return layerIndex;
-}
-//-------------------------------------------------------------------------------------------------------------------
-// 【函数名称】Neuron::getIndex
-// 【函数功能】获取神经元在层内的索引
-// 【参数】无
-// 【返回值】int - 神经元在层内的索引
-// 【开发者及日期】李孟涵 2025年7月13日
-// 【更改记录】无
-//-------------------------------------------------------------------------------------------------------------------
-int Neuron::getIndex() const {
-    return index;
+std::pair<int, int> Neuron::getPosition() const {
+    // 获取当前神经元在网络中的位置
+    if (layer == nullptr) {
+        std::cerr << "Error: Neuron is not attached to a layer.\n";
+        return {-1, -1}; // 如果神经元未附加到层，返回无效位置
+    }
+    // 获取当前神经元在层中的索引
+    int indexInLayer = 0;
+    for (const auto& neuron : layer->getNeurons()) {
+        if (&neuron == this) {
+            break; // 找到当前神经元在层中的索引
+        }
+        indexInLayer++;
+    }
+    return {layer->getIndex(), indexInLayer}; // 返回神经元在层中的索引
 }
 //-------------------------------------------------------------------------------------------------------------------
 // 【函数名称】Neuron::getDendriteCount
@@ -176,27 +193,6 @@ void Neuron::setWeights(const std::vector<double>& weights) {
     for (size_t i = 0; i < Dendrites.size(); ++i) {
         Dendrites[i]->setWeight(weights[i]);
     }
-}
-//-------------------------------------------------------------------------------------------------------------------
-//【函数功能】设置神经元在层内的索引
-//【参数】newIndex - 新的索引值
-//【返回值】无
-//【开发者及日期】李孟涵 2025年7月13日
-//【更改记录】无
-//-------------------------------------------------------------------------------------------------------------------
-void Neuron::setIndex(int newIndex) {
-    index = newIndex;
-}
-//-------------------------------------------------------------------------------------------------------------------
-//【函数名称】Neuron::setLayerIndex
-//【函数功能】设置神经元所在层的索引
-//【参数】newLayerIndex - 新的层索引值
-//【返回值】无
-//【开发者及日期】李孟涵 2025年7月13日
-//【更改记录】无
-//-------------------------------------------------------------------------------------------------------------------
-void Neuron::setLayerIndex(int newLayerIndex) {
-    layerIndex = newLayerIndex;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //【函数名称】Neuron::setBias
@@ -324,7 +320,7 @@ void Neuron::updateInput() {
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Neuron::updateOutput() {
-    if (layerIndex != 0) {
+    if (getPosition().first != 0) {
         updateInput(); // 更新树突输入信号
     }
     Soma::updateOutput(); // 更新细胞体输出信号
@@ -341,21 +337,35 @@ void Neuron::updateOutput() {
 // 【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
 void Neuron::showConnections() const {
-    std::cout << "Neuron at layer " << layerIndex << ", index " << index << ":\n";
+    auto position = getPosition();
+    std::cout << "Neuron at layer " << position.first << ", index " << position.second << ":\n";
     std::cout << "  Dendrites (incoming connections):\n";
     for (const auto& dendrite : Dendrites) {
         if (dendrite->getPre()) {
-            std::cout << "    From Neuron(layer=" << dendrite->getPre()->layerIndex
-                      << ", index=" << dendrite->getPre()->index << ") with weight "
+            auto prePosition = dendrite->getPre()->getPosition();
+            std::cout << "    From Neuron(layer=" << prePosition.first
+                      << ", index=" << prePosition.second << ") with weight "
                       << dendrite->getWeight() << "\n";
         }
     }// 输出当前神经元的树突连接信息
     std::cout << "  Axon (outgoing connections):\n";
     for (const auto& synapse : Axon) {
         if (synapse->getNxt()) {
-            std::cout << "    To Neuron(layer=" << synapse->getNxt()->layerIndex
-                      << ", index=" << synapse->getNxt()->index << ") with weight "
+            auto nxtPosition = synapse->getNxt()->getPosition();
+            std::cout << "    To Neuron(layer=" << nxtPosition.first
+                      << ", index=" << nxtPosition.second << ") with weight "
                       << synapse->getWeight() << "\n";
         }
     }// 输出当前神经元的轴突连接信息
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 【函数名称】Neuron::setLayer
+// 【函数功能】设置当前神经元所在的层
+// 【参数】newLayer - 新的层指针
+// 【返回值】无
+// 【开发者及日期】李孟涵 2025年7月29日
+// 【更改记录】无
+//-------------------------------------------------------------------------------------------------------------------
+void Neuron::setLayer(Layer* newLayer) {
+    layer = newLayer;
 }

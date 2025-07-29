@@ -4,6 +4,7 @@
 // 【开发者及日期】李孟涵 2025年7月20日
 // 【更改记录】2025年7月20日 对扩展名的检查方法进行了改进
 // 【更改记录】2025年7月24日 增加了对网络有效性的检查, 增加导入网络名称的功能
+// 【更改记录】2025年7月29日 针对索引进行相应修改
 //-------------------------------------------------------------------------------------------------------------------
 #include "ANNFilePorter.hpp" // 神经网络文件导入导出类的头文件
 #include <iostream>          // 输入输出流头文件
@@ -95,7 +96,7 @@ Network ANNImporter::import() {
             activationType = neurons[layerInfo.startNeuron].activationType;
         }
         
-        Layer* layer = new Layer(static_cast<int>(layerIdx), neuronCount, biases, activationType);
+        Layer* layer = new Layer(&network, neuronCount, biases, activationType);
         network.addLayer(layer);
     }
     

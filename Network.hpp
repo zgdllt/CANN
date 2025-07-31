@@ -18,7 +18,27 @@
 //-------------------------------------------------------------------------------------------------------------------
 // 【类名】Network
 // 【功能】管理完整的神经网络，包括层的添加删除、前向传播、权重设置、网络验证、文件导入导出等功能
-// 【接口说明】提供网络构建、训练、推理、持久化等完整的神经网络操作接口
+// 【接口说明】提供网络构建、推理、持久化等完整的神经网络操作接口
+//   - Network(): 默认构造函数，初始化网络层数为0
+//   - Network(const Network& other): 拷贝构造函数
+//   - Network& operator=(const Network& other): 赋值运算符重载
+//   - void addLayer(Layer* layer): 添加新的网络层
+//   - std::vector<std::vector<double>> forward(const std::vector<double>& inputs): 执行前向传播
+//   - bool isValid() const: 验证网络结构合法性
+//   - void setWeights(int layerIndex, const std::vector<std::vector<double>>& weights): 设置权重
+//   - void deleteLayer(int index): 删除指定索引的网络层
+//   - void addLayer(int index): 在指定索引处添加新层
+//   - void addNeuron(int layerIndex, double bias, int activationType): 添加神经元
+//   - void deleteNeuron(int layerIndex, int neuronIndex): 删除神经元
+//   - void showLayer(int index) const: 显示指定层信息
+//   - void showLayers() const: 显示所有层信息
+//   - void setName(const std::string& name): 设置网络名称
+//   - std::string getName() const: 获取网络名称
+//   - void showInfo() const: 显示网络整体信息
+//   - ~Network(): 析构函数
+//   - const Layer* getLayer(int index) const: 获取指定层
+//   - const std::list<Layer*>& getLayers() const: 获取所有层列表
+//   - int getLayerCount() const: 获取网络层数
 // 【开发者及日期】李孟涵 2025年7月13日
 // 【更改记录】2025年7月21日 添加了网络层的添加、删除、前向传播等功能
 // 【更改记录】2025年7月23日 增加拷贝构造函数和赋值运算符重载，使用addLayer等函数从基础结构重新构建网络，防止浅拷贝导致的指针错误

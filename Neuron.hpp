@@ -16,7 +16,26 @@ class Network;
 //-------------------------------------------------------------------------------------------------------------------
 // 【类名】Neuron
 // 【功能】实现人工神经网络中的神经元，继承自Soma类，提供神经元的连接、权重设置、信号传播等功能
-// 【接口说明】提供构造函数、连接管理、权重设置、信号处理、层级管理等公有接口
+// 【接口说明】提供构造函数、连接管理、权重设置、信号处理、层级管理等接口
+//   - Neuron(const Neuron& other): 复制构造函数
+//   - Neuron(std::vector<Synapse*> pre, double bias, int activationFunctionType, Layer* layer): 构造函数
+//   - bool isConnectedTo(const Neuron& other) const: 判断与另一神经元是否连接
+//   - void connectTo(Neuron* other, double weight): 连接到另一神经元
+//   - void disconnectTo(Neuron* other): 断开与另一神经元的连接
+//   - std::vector<double> getWeights() const: 获取树突权重
+//   - void setWeights(const std::vector<double>& weights): 设置树突权重
+//   - void setWeight(int index, double weight): 设置特定树突权重
+//   - void setLayer(Layer* newLayer): 设置所属层
+//   - std::pair<int, int> getPosition() const: 获取在网络内的位置
+//   - void showConnections() const: 显示连接信息
+//   - int getDendriteCount() const: 获取树突数量
+//   - int getAxonCount() const: 获取轴突数量
+//   - void setBias(double newBias): 设置偏置
+//   - void remove(): 移除当前神经元
+//   - void cleanInvalidSynapses(const std::vector<Neuron*>& invalidNeurons): 清理无效突触
+//   - void updateInput(): 更新输入
+//   - void updateOutput() override: 更新输出
+//   - virtual ~Neuron(): 析构函数
 // 【开发者及日期】李孟涵 2025年7月13日
 // 【更改记录】2025年7月13日 不将树突轴突作为两个类
 // 【更改记录】2025年7月29日 删除私有成员变量layerIndex和index，改为基于层内位置的动态计算

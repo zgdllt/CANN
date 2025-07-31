@@ -15,6 +15,18 @@
 //【类名】Soma
 //【功能】实现神经元胞体的基本功能，包括输入处理、偏置设置、激活函数选择和输出计算
 //【接口说明】提供输入输出管理、偏置设置、激活函数配置等公有接口，继承激活函数功能
+//  - Soma(): 默认构造函数，初始化空输入向量和默认偏置值
+//  - Soma(std::vector<double> inputs, double bias, int activationFunctionType): 构造函数
+//  - void addInput(double input): 添加输入信号到输入向量
+//  - std::vector<double> getInputs() const: 获取当前输入向量
+//  - void setInputs(const std::vector<double>& inputs): 设置输入向量
+//  - void setBias(double bias): 设置偏置值
+//  - double getBias() const: 获取当前偏置值
+//  - void setActivationFunctionType(int type): 设置激活函数类型
+//  - int getActivationFunctionType() const: 获取当前激活函数类型
+//  - virtual void updateOutput(): 更新输出值，计算输入和偏置的激活函数结果
+//  - double getOutput() const: 获取当前输出值
+//  - virtual ~Soma(): 虚析构函数
 //【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------

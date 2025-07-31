@@ -19,6 +19,12 @@ enum class FilePorterType { IMPORTER, EXPORTER };// 文件操作类型枚举，�
 //【类名】FilePorter
 //【功能】提供文件操作的基础功能，支持文件类型检测、打开状态检测等
 //【接口说明】模板类，根据FilePorterType枚举决定是导入器还是导出器
+//  - FilePorter(const std::string& filename, const std::vector<std::string>& extensions): 构造函数
+//  - const std::string& getFilename() const: 获取文件名
+//  - void setFilename(const std::string& newFilename): 设置文件名
+//  - void FileTypeTest(const std::string&, const std::string& ExtName): 测试扩展名正确性
+//  - static void FileOpenTest(const std::string& FileName): 测试文件可打开性
+//  - static std::string GetExtName(const std::string& FileName): 获取文件扩展名
 //【开发者及日期】李孟涵 2025年7月20日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------

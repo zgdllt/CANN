@@ -17,6 +17,40 @@
 //【类名】View
 //【功能】提供用户界面相关的所有功能，包括菜单显示、信息输出、用户输入等
 //【接口说明】纯界面类，不包含业务逻辑，只负责与用户的交互
+//  - View(): 构造函数
+//  - ~View(): 析构函数
+//  界面显示方法：
+//  - void clearScreen(): 清屏
+//  - void showMainMenu(): 显示主菜单
+//  - void showHeader(): 显示程序头部信息
+//  - void waitForUser(): 等待用户按键
+//  用户输入获取方法：
+//  - int getMenuChoice(): 获取菜单选择
+//  - std::string getFilename(): 获取文件名
+//  - int getLayerCount(): 获取层数
+//  - int getNeuronCount(int layerIndex): 获取神经元数量
+//  - int getLayerIndex(): 获取层索引
+//  - int getNeuronIndex(): 获取神经元索引
+//  - int getPosition(): 获取位置
+//  - double getBias(): 获取偏置值
+//  - int getActivationType(): 获取激活函数类型
+//  - std::vector<double> getInputValues(int size): 获取输入值
+//  - std::string getNetworkName(): 获取网络名称
+//  - char getConfirmation(): 获取确认信息
+//  信息显示方法：
+//  - void showSuccessMessage(const std::string& message): 显示成功信息
+//  - void showErrorMessage(const std::string& message): 显示错误信息
+//  - void showWarningMessage(const std::string& message): 显示警告信息
+//  - void showInfoMessage(const std::string& message): 显示一般信息
+//  - void showProgress(const std::string& message): 显示进度信息
+//  网络信息显示方法：
+//  - void showNetworkInfo(const Network& network): 显示网络信息
+//  - void showLayerInfo(const Network& network, int layerIndex): 显示层信息
+//  - void showAllLayersInfo(const Network& network): 显示所有层信息
+//  - void showForwardPropagationResult(const std::vector<std::vector<double>>& output): 显示前向传播结果
+//  - void showNeuronConnections(const Neuron& neuron): 显示神经元连接
+//  操作提示方法：各种对话框显示方法
+//  - void showGoodbye(): 显示再见信息
 //【开发者及日期】李孟涵 2025年7月30日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------

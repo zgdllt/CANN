@@ -12,6 +12,10 @@
 //【类名】ActivationFunc
 //【功能】提供神经网络中常用的激活函数，包括sigmoid、tanh、ReLU和线性函数
 //【接口说明】提供静态方法实现各类激活函数
+//  - static double sigmoid(double x): Sigmoid激活函数，输出范围(0,1)
+//  - static double tanh(double x): 双曲正切激活函数，输出范围(-1,1)
+//  - static double relu(double x): ReLU激活函数，输出范围[0,+∞)
+//  - static double linear(double x): 线性激活函数，直接返回输入值
 //【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------

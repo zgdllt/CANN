@@ -13,7 +13,19 @@ class Neuron; // 预先定义Neuron类，避免头文件互相包含导致编译
 //-------------------------------------------------------------------------------------------------------------------
 //【类名】Synapse
 //【功能】实现神经元之间的突触连接，管理权重、输入信号和信号传递
-//【接口说明】提供突触连接管理、权重设置、信号传递等公有接口
+//【接口说明】提供突触连接管理、权重设置、信号传递等接口
+//  - Synapse(): 默认构造函数，初始化为空突触
+//  - Synapse(double input, double weight, Neuron* pre, Neuron* nxt): 基础构造函数
+//  - Synapse& operator=(const Synapse& other): 复制赋值运算符
+//  - Neuron* getPre() const: 获取前驱神经元指针
+//  - Neuron* getNxt() const: 获取后继神经元指针
+//  - void setPre(Neuron* pre): 设置前驱神经元指针
+//  - void setNxt(Neuron* nxt): 设置后继神经元指针
+//  - double getWeight() const: 获取突触权重
+//  - void setWeight(double weight): 设置突触权重
+//  - double getInput() const: 获取输入信号
+//  - void setInput(double input): 设置输入信号
+//  - double getSignal() const: 获取信号值
 //【开发者及日期】李孟涵 2025年7月13日
 //【更改记录】无
 //-------------------------------------------------------------------------------------------------------------------
